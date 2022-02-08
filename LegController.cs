@@ -6,16 +6,20 @@ public class LegController : MonoBehaviour
 {
     [SerializeField] Rigidbody2D[] _legs;
     [SerializeField] FrictionJoint2D[] _joints;
+    [SerializeField] GameObject[] _bodyAnchors;
+    [SerializeField] Rigidbody2D _theBody;
     [SerializeField] Camera _cam;
 
     Vector2 legDir;
     Vector2 mousePos;
 
     Vector2 legForce;
-    float force = 300;
+    Vector2 netForce;
+    float dirForce = 500f;
 
     bool selected;
     bool fired;
+    bool pushed, pulled;
 
     int activeLeg;
 
@@ -24,12 +28,14 @@ public class LegController : MonoBehaviour
         LegSelecter();
         LegDirection();
         LimitRadius();
-        ApplyForce();
+        ApplyLegForce();
+        ApplyDirectionalForce();
     }
 
     void FixedUpdate() 
     {
         ShootLeg();
+        MoveBody();
     }
 
     void LegDirection()
@@ -52,7 +58,7 @@ public class LegController : MonoBehaviour
         {
             return;
         }
-       
+
         _legs[activeLeg].AddForce(legForce, ForceMode2D.Impulse);
         fired = false;
     }
@@ -90,9 +96,8 @@ public class LegController : MonoBehaviour
         if(!selected)
         {
             return;
-        }
-
-        Vector2 center = _joints[activeLeg].connectedAnchor;
+        } 
+        Vector2 center = _bodyAnchors[activeLeg].transform.position; // Change
         float maxRadius = 1f;
         float distanceFromCenter = Vector2.Distance(center, _legs[activeLeg].position);
 
@@ -104,12 +109,49 @@ public class LegController : MonoBehaviour
         }
     }
 
-    void ApplyForce()
+    void UnfreezeLeg()
+    {
+        _legs[activeLeg].constraints = RigidbodyConstraints2D.None;
+    }
+
+    void ApplyLegForce()
     {
         if(Input.GetMouseButtonDown(0) && selected)
         {
-            legForce = legDir * force * Time.fixedDeltaTime;
+            UnfreezeLeg();
+            legForce = legDir * dirForce * Time.fixedDeltaTime;
             fired = true;
-        }   
+        }
+    }
+
+    // Fix repetative code
+    void ApplyDirectionalForce()
+    {
+        if(Input.GetKeyDown("space"))
+        {
+            pushed = true;
+            netForce = _theBody.transform.up;
+        }
+        else if(Input.GetMouseButtonDown(1))
+        {
+            pulled = true;
+            netForce = _theBody.transform.up;
+        }
+    }
+
+    void MoveBody()
+    {
+        if(pushed)
+        {
+            _theBody.AddForce(netForce * dirForce * Time.fixedDeltaTime, ForceMode2D.Impulse);
+            pushed = false;
+        }
+        else if(pulled)
+        {
+            _theBody.AddForce(-netForce * dirForce * Time.fixedDeltaTime, ForceMode2D.Impulse);
+            pulled = false;
+        }
+
+        netForce = new Vector2(0f, 0f);
     }
 }

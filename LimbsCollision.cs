@@ -9,14 +9,16 @@ public class LimbsCollision : MonoBehaviour
     void OnCollisionEnter2D(Collision2D other) 
     {
         // Fix clicking on new surface after previously colliding
-        if(other.gameObject.tag == "Surface")
+        if(other.gameObject.tag != "Surface")
         {
-            //leg.constraints = RigidbodyConstraints2D.FreezeAll;
-            Debug.Log("Here");
+            return;
         }
-        if(other.gameObject.tag == "Limb")
-        {
-            Debug.Log("Here");
-        }
+        
+        FreezeLeg();
+    }
+
+    void FreezeLeg()
+    {
+        leg.constraints = RigidbodyConstraints2D.FreezeAll;
     }
 }
